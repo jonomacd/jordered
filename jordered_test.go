@@ -6,20 +6,7 @@ import (
 )
 
 const (
-	mapJson = `
-{
-    "one": {
-        "hendrik": "sedin" 
-    },
-    "two": {
-        "daniel": "sedin"
-    },
-    "three": [
-        "vancouver",
-        "canucks"
-    ],
-    "four": "hockey"
-}`
+	mapJson = `{"one":{"hendrik":"sedin"},"two":{"daniel":"sedin"},"three":["vancouver","canucks"],"four":"hockey"}`
 	arrJson = `
 [
     {
@@ -43,6 +30,15 @@ func TestOrderedMap(t *testing.T) {
 	err := json.Unmarshal([]byte(mapJson), om)
 	if err != nil {
 		t.Error(err)
+	}
+
+	bb, err := json.Marshal(om)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if string(bb) != mapJson {
+		t.Errorf("Bad json marshall expected %s, got %s", mapJson, string(bb))
 	}
 
 	keys := []string{"one", "two", "three", "four"}
@@ -152,4 +148,5 @@ func TestOrderedMap(t *testing.T) {
 	if err == nil {
 		t.Error("Marshalling should have failed. It succeeded")
 	}
+
 }

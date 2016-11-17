@@ -76,6 +76,29 @@ func (m *OrderedMap) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (m *OrderedMap) MarshalJSON() ([]byte, error) {
+	buf := &bytes.Buffer{}
+	buf.Write([]byte{'{'})
+
+	for ii, value := range m.ordered {
+		bb, err := json.Marshal(value.value)
+		if err != nil {
+			fmt.Printf("busted: %v\n", value.value)
+			return nil, err
+		}
+
+		fmt.Fprintf(buf, `"%s":%s`, value.key, string(bb))
+		if ii < len(m.ordered)-1 {
+			buf.WriteByte(',')
+		}
+
+	}
+
+	buf.Write([]byte{'}'})
+
+	return buf.Bytes(), nil
+}
+
 // Next returns true if there is a next item
 func (m *OrderedMap) Next() bool {
 	return m.iter < len(m.ordered)
