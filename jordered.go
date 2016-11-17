@@ -111,6 +111,17 @@ func (m *OrderedMap) Get(key string) (interface{}, bool) {
 	return nil, false
 }
 
+func (m *OrderedMap) Set(key string, value interface{}) {
+	for ii, item := range m.ordered {
+		if item.key == key {
+			item.value = value
+			m.ordered[ii] = item
+			return
+		}
+	}
+	m.Append(key, value)
+}
+
 func (m *OrderedMap) Append(key string, value interface{}) {
 	if m.ordered == nil {
 		m.ordered = []element{}

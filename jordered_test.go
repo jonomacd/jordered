@@ -123,6 +123,7 @@ func TestOrderedMap(t *testing.T) {
 		t.Errorf("Did not find all the values (or two many). Expected %v, Got %v", 5, ii)
 	}
 
+	// Test get
 	value, ok := om.Get("two")
 	if !ok {
 		t.Errorf("Key two does not exist, it should")
@@ -133,6 +134,16 @@ func TestOrderedMap(t *testing.T) {
 	}
 	if string(values[1]) != string(valB) {
 		t.Errorf("Item does not have the correct values expected: %s got: %s", string(values[1]), string(valB))
+	}
+
+	// Test set
+	om.Set("two", "foo")
+	value, ok = om.Get("two")
+	if !ok {
+		t.Errorf("Key two does not exist, it should")
+	}
+	if "foo" != value.(string) {
+		t.Errorf("Item does not have the correct values expected: foo got: %s", value)
 	}
 
 	om = &OrderedMap{}
