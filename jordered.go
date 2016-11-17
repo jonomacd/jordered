@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"strings"
 )
 
 type OrderedMap struct {
 	ordered []element
 	iter    int
+	raw     interface{}
+	rawArr  []interface{}
 }
 
 type element struct {
@@ -24,52 +25,77 @@ func (m *OrderedMap) UnmarshalJSON(data []byte) error {
 	m.ordered = []element{}
 
 	// We are only marshalling the first level. Anything deeper we just throw in an interface
-	depth := 0
+	objType := ""
+	t, err := dec.Token()
+	if err != nil {
+		return err
+	}
 
-	for {
-		t, err := dec.Token()
-		if err == io.EOF {
-			break
+	switch val := t.(type) {
+	case json.Delim:
+		if strings.ContainsAny(val.String(), "[]") {
+			objType = "array"
+		} else {
+			objType = "object"
 		}
-		if err != nil {
-			return err
-		}
+	case string, float64, bool, nil, json.Number:
+		m.raw = val
+		return nil
+	}
 
-		if depth == 0 {
-			switch val := t.(type) {
-			case json.Delim:
-				if strings.ContainsAny(val.String(), "[]") {
-					// This is an array not a map.
-					return fmt.Errorf("Unable to unmarshall array into map")
-				}
-				depth++
-				continue
-			case string, float64, bool, nil, json.Number:
-				return fmt.Errorf("Unable to unmarshall value into map")
-			}
-		}
-
-		if depth == 1 {
+	if objType == "object" {
+		for dec.More() {
+			// Read another token as this is the key
+			t, err = dec.Token()
 			key, ok := t.(string)
 			if !ok {
-				end, ok := t.(json.Delim)
-				if !ok {
-					return fmt.Errorf("Object Key must be a string %T, %v ", t, t)
-				}
-				if end.String() == "}" {
-					// We are done
-					break
-				}
+				return fmt.Errorf("Object Key must be a string %T, %v ", t, t)
 			}
-			var value interface{}
-			err := dec.Decode(&value)
+			omValue := &OrderedMap{}
+			err := dec.Decode(&omValue)
 			if err != nil {
 				return err
+			}
+
+			var value interface{}
+			if omValue.raw != nil {
+				value = omValue.raw
+			} else if omValue.rawArr != nil {
+				value = omValue.rawArr
+			} else {
+				value = omValue
 			}
 			m.ordered = append(m.ordered, element{
 				key:   key,
 				value: value,
 			})
+		}
+	} else if objType == "array" {
+		for dec.More() {
+			switch t.(type) {
+			case string, float64, bool, nil, json.Number:
+				m.rawArr = append(m.rawArr, t)
+				t, err = dec.Token()
+				if err != nil {
+					return err
+				}
+			default:
+				omValue := &OrderedMap{}
+				err := dec.Decode(&omValue)
+				if err != nil {
+					return err
+				}
+				var value interface{}
+				if omValue.raw != nil {
+					value = omValue.raw
+				} else if omValue.rawArr != nil {
+					value = omValue.rawArr
+				} else {
+					value = omValue
+				}
+
+				m.rawArr = append(m.rawArr, value)
+			}
 		}
 	}
 
@@ -77,13 +103,18 @@ func (m *OrderedMap) UnmarshalJSON(data []byte) error {
 }
 
 func (m *OrderedMap) MarshalJSON() ([]byte, error) {
+	if m.raw != nil {
+		return json.Marshal(m.raw)
+	} else if m.rawArr != nil {
+		return json.Marshal(m.rawArr)
+	}
+
 	buf := &bytes.Buffer{}
 	buf.Write([]byte{'{'})
 
 	for ii, value := range m.ordered {
 		bb, err := json.Marshal(value.value)
 		if err != nil {
-			fmt.Printf("busted: %v\n", value.value)
 			return nil, err
 		}
 

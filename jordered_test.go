@@ -6,22 +6,8 @@ import (
 )
 
 const (
-	mapJson = `{"one":{"hendrik":"sedin"},"two":{"daniel":"sedin"},"three":["vancouver","canucks"],"four":"hockey"}`
-	arrJson = `
-[
-    {
-        "hendrik": "sedin" 
-    },
-    {
-        "daniel": "sedin"
-    },
-    [
-        "vancouver",
-        "canucks"
-    ],
-    "hockey"
-]
-`
+	mapJson = `{"one":{"hendrik":"sedin"},"two":{"daniel":"sedin"},"three":[[1,"2","three"],"vancouver",{"teamName":"canucks","color":"blue","weapon":"stick"}],"four":"hockey"}`
+	arrJson = `[{"hendrik":"sedin"},{"daniel":"sedin"},["vancouver","canucks"],"hockey"]`
 )
 
 func TestOrderedMap(t *testing.T) {
@@ -31,7 +17,6 @@ func TestOrderedMap(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
 	bb, err := json.Marshal(om)
 	if err != nil {
 		t.Error(err)
@@ -45,7 +30,7 @@ func TestOrderedMap(t *testing.T) {
 	values := [][]byte{
 		[]byte(`{"hendrik":"sedin"}`),
 		[]byte(`{"daniel":"sedin"}`),
-		[]byte(`["vancouver","canucks"]`),
+		[]byte(`[[1,"2","three"],"vancouver",{"teamName":"canucks","color":"blue","weapon":"stick"}]`),
 		[]byte(`"hockey"`),
 	}
 
@@ -145,8 +130,17 @@ func TestOrderedMap(t *testing.T) {
 	om = &OrderedMap{}
 
 	err = json.Unmarshal([]byte(arrJson), om)
-	if err == nil {
-		t.Error("Marshalling should have failed. It succeeded")
+	if err != nil {
+		t.Error("Marshalling failed: %v", err)
+	}
+
+	bb, err = json.Marshal(om)
+	if err != nil {
+		t.Error("Marshalling failed: %v", err)
+	}
+
+	if string(bb) != arrJson {
+		t.Errorf("Bad json marshall expected %s, got %s", arrJson, string(bb))
 	}
 
 }
