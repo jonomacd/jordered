@@ -22,6 +22,7 @@ type element struct {
 // UnmarshalsJSON unmarshals json data and maintains the map order
 func (m *OrderedMap) UnmarshalJSON(data []byte) error {
 	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
 	m.ordered = []element{}
 
 	// We are only marshalling the first level. Anything deeper we just throw in an interface
