@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	mapJson = `{"one":{"hendrik":"sedin"},"two":{"daniel":"sedin"},"three":[[1,"2","three"],"vancouver",{"teamName":"canucks","color":"blue","weapon":"stick"}],"four":"hockey"}`
+	mapJson = `{"one":{"hendrik":"sedin"},"two":{"daniel":"sedin"},"three":[[1,"2","three"],"vancouver",{"teamName":"canucks","color":"blue","weapon":"stick"}],"four":"hockey","five":null}`
 	arrJson = `[{"hendrik":"sedin"},{"daniel":"sedin"},["vancouver","canucks"],"hockey"]`
 )
 
@@ -26,12 +26,13 @@ func TestOrderedMap(t *testing.T) {
 		t.Errorf("Bad json marshall expected %s, got %s", mapJson, string(bb))
 	}
 
-	keys := []string{"one", "two", "three", "four"}
+	keys := []string{"one", "two", "three", "four", "five"}
 	values := [][]byte{
 		[]byte(`{"hendrik":"sedin"}`),
 		[]byte(`{"daniel":"sedin"}`),
 		[]byte(`[[1,"2","three"],"vancouver",{"teamName":"canucks","color":"blue","weapon":"stick"}]`),
 		[]byte(`"hockey"`),
+		[]byte("null"),
 	}
 
 	// Test iterator and order
@@ -52,7 +53,7 @@ func TestOrderedMap(t *testing.T) {
 
 		ii++
 	}
-	if ii != 4 {
+	if ii != len(values) {
 		t.Errorf("Did not find all the values (or two many). Expected %v, Got %v", 4, ii)
 	}
 
@@ -75,7 +76,7 @@ func TestOrderedMap(t *testing.T) {
 
 		ii++
 	}
-	if ii != 4 {
+	if ii != len(values) {
 		t.Errorf("Did not find all the values (or two many). Expected %v, Got %v", 4, ii)
 	}
 	om.Reset()
@@ -100,7 +101,7 @@ func TestOrderedMap(t *testing.T) {
 
 		ii++
 	}
-	if ii != 5 {
+	if ii != len(values) {
 		t.Errorf("Did not find all the values (or two many). Expected %v, Got %v", 5, ii)
 	}
 
@@ -131,12 +132,12 @@ func TestOrderedMap(t *testing.T) {
 
 	err = json.Unmarshal([]byte(arrJson), om)
 	if err != nil {
-		t.Error("Marshalling failed: %v", err)
+		t.Error("Marshalling failed: %w", err)
 	}
 
 	bb, err = json.Marshal(om)
 	if err != nil {
-		t.Error("Marshalling failed: %v", err)
+		t.Error("Marshalling failed: %w", err)
 	}
 
 	if string(bb) != arrJson {
