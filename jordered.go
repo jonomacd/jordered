@@ -57,18 +57,9 @@ func (m *OrderedMap) UnmarshalJSON(data []byte) error {
 			if err != nil {
 				return err
 			}
-
-			var value interface{}
-			if omValue.raw != nil {
-				value = omValue.raw
-			} else if omValue.rawArr != nil {
-				value = omValue.rawArr
-			} else {
-				value = omValue
-			}
 			m.ordered = append(m.ordered, element{
 				key:   key,
-				value: value,
+				value: getValue(omValue),
 			})
 		}
 	} else if objType == "array" {
@@ -86,21 +77,25 @@ func (m *OrderedMap) UnmarshalJSON(data []byte) error {
 				if err != nil {
 					return err
 				}
-				var value interface{}
-				if omValue.raw != nil {
-					value = omValue.raw
-				} else if omValue.rawArr != nil {
-					value = omValue.rawArr
-				} else {
-					value = omValue
-				}
-
-				m.rawArr = append(m.rawArr, value)
+				m.rawArr = append(m.rawArr, getValue(omValue))
 			}
 		}
 	}
 
 	return nil
+}
+
+func getValue(omv *OrderedMap) interface{} {
+	switch {
+	case omv == nil:
+		return nil
+	case omv.raw != nil:
+		return omv.raw
+	case omv.rawArr != nil:
+		return omv.rawArr
+	default:
+		return omv
+	}
 }
 
 func (m *OrderedMap) MarshalJSON() ([]byte, error) {
